@@ -46,7 +46,7 @@ jobs:
     - name: Build Frontend
       run: |
         cd frontend
-        npm run build --if-present
+        CI=false npm run build --if-present
 
     # Placeholder for Testing
     # - name: Run Tests

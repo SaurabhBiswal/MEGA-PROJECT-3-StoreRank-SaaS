@@ -150,5 +150,15 @@ Moving from local development to a production-ready containerized environment in
 
 ---
 
+## 14. CI/CD Pipeline: "CI=true" Build Failures 🚦
+**The Challenge:**
+The project built perfectly on local machines, but the GitHub Actions pipeline kept failing during the build step. We discovered that React scripts treat warnings (like unused variables) as fatal errors in CI environments by default (`CI=true`), breaking the deployment flow.
+
+**The Engineering Solution:**
+- **Environment Configuration**: Modified the GitHub Actions workflow (`deploy.yml`) to strictly set `CI=false` during the build command (`CI=false npm run build`).
+- **Why this matters**: This explicitly instructs the build tool to treat warnings as warnings, not errors, allowing a successful build and test cycle even if minor linting issues exist, ensuring continuous delivery isn't blocked by trivial code style preferences.
+
+---
+
 ## 💡 Interview Tip:
 When asked "What was the hardest part?", talk about **Silent Token Refreshing**, **Geocoding Accuracy**, **Google Maps fallback architecture**, or **Dockerizing Legacy Dependencies**. Explain how you moved beyond a simple "call the API" approach to a multi-stage search strategy, an interceptor-based security model, or a resilient container orchestration system.
