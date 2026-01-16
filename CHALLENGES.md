@@ -6,7 +6,7 @@ This document outlines the major technical hurdles faced during the development 
 
 ---
 
-## 1. Geocoding Precision & "Landmark Bias" 🗺️
+## 1. Geocoding Precision & "Landmark Bias" 
 **The Challenge:**
 Standard geocoding (OpenStreetMap Nominatim) often defaults to a city center or a major landmark (like "South Block" or "Dwarka Flyover") when an exact building name isn't found in its database. This creates a misleading UX where the map pin is miles away from the actual store.
 
@@ -19,7 +19,7 @@ Standard geocoding (OpenStreetMap Nominatim) often defaults to a city center or 
 
 ---
 
-## 2. Insecure Legacy Authentication 🔐
+## 2. Insecure Legacy Authentication 
 **The Challenge:**
 The initial codebase used "Dummy" authentication—simply hardcoding a user ID in local storage. This made the application vulnerable to basic unauthorized access and wasn't industry-compliant.
 
@@ -30,7 +30,7 @@ The initial codebase used "Dummy" authentication—simply hardcoding a user ID i
 
 ---
 
-## 3. Dynamic Database Evolution 🗃️
+## 3. Dynamic Database Evolution 
 **The Challenge:**
 The requirement to add location coordinates (Latitude/Longitude) needed to be implemented without breaking existing user data or requiring manual database intervention (Zero-Downtime).
 
@@ -40,7 +40,7 @@ The requirement to add location coordinates (Latitude/Longitude) needed to be im
 
 ---
 
-## 4. Real-time UX Synchronization 🔄
+## 4. Real-time UX Synchronization 
 **The Challenge:**
 Users expect real-time feedback. If a customer rates a store, the Admin and Store Owner should see the update instantly without page refreshes, which is critical for a "Premium" feel.
 
@@ -50,7 +50,7 @@ Users expect real-time feedback. If a customer rates a store, the Admin and Stor
 
 ---
 
-## 5. UI/UX: From Primitive to Premium 💎
+## 5. UI/UX: From Primitive to Premium 
 **The Challenge:**
 The project evolved from a command-line/alert-based interaction (primitive `prompt()` boxes) to a high-fidelity visual experience.
 
@@ -61,7 +61,7 @@ The project evolved from a command-line/alert-based interaction (primitive `prom
 
 ---
 
-## 6. Zero-Downtime Cloud Database Migration ☁️
+## 6. Zero-Downtime Cloud Database Migration 
 **The Challenge:**
 Moving from a local SQLite file to a production-ready Cloud PostgreSQL instance (Aiven) revealed major schema and data-type mismatches, along with foreign key constraint violations during transfer.
 
@@ -71,7 +71,7 @@ Moving from a local SQLite file to a production-ready Cloud PostgreSQL instance 
 
 ---
 
-## 7. Performance Scaling at Warp Speed ⚡
+## 7. Performance Scaling at Warp Speed 
 **The Challenge:**
 As the store list grows, frequent database joins for average ratings and coordinate lookups become a bottleneck. Dashboard loading speeds would degrade over time.
 
@@ -81,7 +81,7 @@ As the store list grows, frequent database joins for average ratings and coordin
 
 ---
 
-## 8. "Silent" Enterprise Security Flow 🛡️
+## 8. "Silent" Enterprise Security Flow 
 **The Challenge:**
 Standard JWTs are either too short (annoying logouts) or too long (security risk). We needed a "SaaS-grade" session management system.
 
@@ -92,7 +92,7 @@ Standard JWTs are either too short (annoying logouts) or too long (security risk
 
 ---
 
-## 9. Event-Driven Email Notifications 📧
+## 9. Event-Driven Email Notifications 
 **The Challenge:**
 Business stakeholders wanted store owners to be proactively notified when a new review arrives, but we didn’t want email failures to ever break the core rating flow.
 
@@ -104,7 +104,7 @@ Business stakeholders wanted store owners to be proactively notified when a new 
 ---
 
 
-## 10. Export-Grade Reporting (CSV + PDF) 🧾
+## 10. Export-Grade Reporting (CSV + PDF) 
 **The Challenge:**
 Product asked for “export” features that work both for spreadsheets (CSV) and executive-ready documents (PDF) without duplicating reporting logic.
 
@@ -115,7 +115,7 @@ Product asked for “export” features that work both for spreadsheets (CSV) an
 
 ---
 
-## 11. GraphQL Overlay on a REST Core 🔍
+## 11. GraphQL Overlay on a REST Core 
 **The Challenge:**
 Recruiters often ask, “Have you worked with GraphQL?” but rewriting a stable REST API from scratch would be risky and time-consuming.
 
@@ -126,7 +126,7 @@ Recruiters often ask, “Have you worked with GraphQL?” but rewriting a stable
 
 ---
 
-## 12. Google Maps Integration & Zomato-Style UX 🗺️
+## 12. Google Maps Integration & Zomato-Style UX 
 **The Challenge:**
 Users expected a premium, Zomato-like map experience with interactive markers, directions, and rich store information popups. The initial Leaflet/OpenStreetMap implementation felt basic and lacked the polish of modern food delivery apps.
 
@@ -139,7 +139,7 @@ Users expected a premium, Zomato-like map experience with interactive markers, d
 
 ---
 
-## 13. Docker & DevOps: "It Works on My Machine" -> "It Works Everywhere" 🐳
+## 13. Docker & DevOps: "It Works on My Machine" -> "It Works Everywhere" 
 **The Challenge:**
 Moving from local development to a production-ready containerized environment introduced complex dependency issues. The backend refused to build on Alpine Linux due to native modules (`bcrypt`) missing build tools, and `express-graphql` caused peer dependency conflicts with newer `graphql` versions.
 
@@ -150,7 +150,7 @@ Moving from local development to a production-ready containerized environment in
 
 ---
 
-## 14. CI/CD Pipeline: "CI=true" Build Failures 🚦
+## 14. CI/CD Pipeline: "CI=true" Build Failures 
 **The Challenge:**
 The project built perfectly on local machines, but the GitHub Actions pipeline kept failing during the build step. We discovered that React scripts treat warnings (like unused variables) as fatal errors in CI environments by default (`CI=true`), breaking the deployment flow.
 
@@ -160,5 +160,3 @@ The project built perfectly on local machines, but the GitHub Actions pipeline k
 
 ---
 
-## 💡 Interview Tip:
-When asked "What was the hardest part?", talk about **Silent Token Refreshing**, **Geocoding Accuracy**, **Google Maps fallback architecture**, or **Dockerizing Legacy Dependencies**. Explain how you moved beyond a simple "call the API" approach to a multi-stage search strategy, an interceptor-based security model, or a resilient container orchestration system.
