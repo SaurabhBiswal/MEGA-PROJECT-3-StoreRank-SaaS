@@ -1,5 +1,7 @@
 # 🚀 Engineering Challenges & Solutions
 
+**GitHub Repository:** [MEGA-PROJECT-3-StoreRank-SaaS](https://github.com/SaurabhBiswal/MEGA-PROJECT-3-StoreRank-SaaS)
+
 This document outlines the major technical hurdles faced during the development of the **Premium Store Rating System** and how they were solved. This is intended to help with technical interviews by providing clear "Problem-Solution" narratives.
 
 ---
