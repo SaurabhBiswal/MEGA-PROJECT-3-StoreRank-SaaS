@@ -1,6 +1,6 @@
-# Store Rating Platform
+# 💎 Store Rating App (Premium Version)
 
-A full-stack web application for rating stores with role-based access control.
+A high-performance, map-integrated store rating system. Check out our [Interview Readiness Guide (CHALLENGES.md)](./CHALLENGES.md) for technical deep-dives into the project.
 
 ## 🌐 Live Demo
 
@@ -17,10 +17,13 @@ A full-stack web application for rating stores with role-based access control.
 
 ## Tech Stack
 
-- **Frontend**: React.js
+- **Frontend**: React.js, Tailwind CSS, Framer Motion, Google Maps API
 - **Backend**: Node.js, Express.js
-- **Database**: SQLite
-- **Authentication**: JWT-based
+- **Database**: PostgreSQL + Redis caching
+- **Authentication**: JWT + Refresh Tokens
+- **Real-time**: Socket.IO
+- **Maps**: Google Maps API (with OpenStreetMap fallback)
+- **Styling**: Tailwind CSS (glassmorphism, dark mode), Framer Motion, Lucide Icons
 
 ## Project Structure
 
@@ -52,6 +55,27 @@ npm start
 
 The frontend will run on `http://localhost:3000`
 
+### Environment Variables
+
+**Backend** (`backend/.env`):
+```
+DATABASE_URL=your_postgres_connection_string
+REDIS_URL=your_redis_connection_string
+JWT_SECRET=your_secret_key
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your_email@gmail.com
+SMTP_PASS=your_app_password
+EMAIL_FROM=your_email@gmail.com
+```
+
+**Frontend** (`frontend/.env`):
+```
+REACT_APP_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+```
+
+> **Note**: Google Maps API key is optional. If not provided, the app will use OpenStreetMap as a fallback.
+
 ## Default Login Credentials
 
 - **Admin**: `admin@test.com` / `Admin@123`
@@ -66,6 +90,12 @@ The frontend will run on `http://localhost:3000`
 - `POST /api/ratings` - Submit rating
 - `GET /api/stats` - Get dashboard statistics
 - `POST /api/auth/update-password` - Update user password
+
+## Premium UI Highlights
+
+- **Tailwind-powered dashboards** with glassmorphism cards and responsive layout for Admin, Store Owner, and User roles.
+- **Global dark mode toggle** with class-based theming persisted in `localStorage` and applied across all dashboards.
+- **Animated interactions** using Framer Motion on login/registration flows, rating cards, and key analytics sections.
 
 ## Author
 

@@ -1,0 +1,155 @@
+.user-dashboard {
+    padding: 40px 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Header Glassmorphism */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding: 30px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-header h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: var(--main-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -1px;
+}
+
+/* Search Section Glassmorphism */
+.search-section {
+    background: var(--glass-bg);
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    margin-bottom: 30px;
+}
+
+.search-section input,
+.search-section select {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--glass-border);
+    color: hsl(var(--text-main));
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.search-section input:focus,
+.search-section select:focus {
+    outline: none;
+    border-color: hsl(var(--accent-primary));
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Store Cards - Premium Look */
+.stores-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 25px;
+}
+
+.store-card {
+    padding: 25px;
+    border-radius: 20px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.store-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.store-card h3 {
+    margin: 0;
+    color: hsl(var(--text-main));
+    font-size: 1.4rem;
+}
+
+.store-address {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin: 10px 0;
+}
+
+/* Review Section */
+.user-rating {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+}
+
+.user-rating textarea {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--glass-border);
+    color: hsl(var(--text-main));
+    resize: vertical;
+}
+
+.user-rating button {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    border: none;
+    padding: 12px 24px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(108, 92, 231, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.user-rating button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 92, 231, 0.4);
+    opacity: 0.95;
+}
+
+/* Action Buttons */
+.action-btn {
+    background: rgba(0, 0, 0, 0.05);
+    color: hsl(var(--text-main));
+    border: 1px solid var(--glass-border);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+    background: rgba(255, 71, 87, 0.2);
+    border: 1px solid rgba(255, 71, 87, 0.4);
+    color: #ff4757;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.logout-btn:hover {
+    background: rgba(255, 71, 87, 0.3);
+}

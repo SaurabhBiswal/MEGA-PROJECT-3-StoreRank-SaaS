@@ -1,12 +1,65 @@
-﻿body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-color: 220 33% 98%;
+  --card-bg: 0 0% 100%;
+  --accent-primary: 231 68% 64%;
+  --accent-secondary: 199 89% 48%;
+  --text-main: 222 47% 11%;
+  --text-dim: 222 15% 45%;
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.05);
+  --glass-blur: 12px;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  body {
+    @apply m-0 bg-slate-50 text-slate-900 antialiased selection:bg-primary/20 dark:bg-slate-950 dark:text-slate-100;
+    font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  }
+
+  * {
+    @apply box-border border-slate-100;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-glass;
+  }
+
+  .premium-button {
+    @apply relative overflow-hidden transition-all duration-300 active:scale-95 disabled:opacity-50;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+}
+
+/* Smooth Transitions */
+.page-transition {
+  @apply transition-all duration-500 ease-in-out;
 }

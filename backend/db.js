@@ -30,6 +30,8 @@ db.serialize(() => {
     name TEXT NOT NULL,
     email TEXT,
     address TEXT NOT NULL,
+    latitude REAL,
+    longitude REAL,
     owner_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
@@ -44,7 +46,15 @@ db.serialize(() => {
     UNIQUE(user_id, store_id)
   )`);
 
-  console.log('✅ Tables readiness check complete');
+  // --- SCHEMA MIGRATION ---
+  db.run("ALTER TABLE stores ADD COLUMN latitude REAL", (err) => {
+    if (err && !err.message.includes("duplicate column name")) console.log("Migration Note: Latitude column already exists or restricted.");
+  });
+  db.run("ALTER TABLE stores ADD COLUMN longitude REAL", (err) => {
+    if (err && !err.message.includes("duplicate column name")) console.log("Migration Note: Longitude column already exists or restricted.");
+  });
+
+  console.log('✅ Tables & Migration readiness check complete');
 
   db.get("SELECT count(*) as count FROM users", (err, row) => {
     if (err) {
@@ -80,17 +90,17 @@ function insertData() {
     ['Store Owner Representative', 'owner@store.com', ownerHash, '789 Business Rd, Market', 'store_owner']
   );
   db.run(
-    `INSERT INTO stores (name, email, address, owner_id) VALUES (?, ?, ?, ?)`,
-    ['Pizza Hut', 'pizza@store.com', '123 Food St', 3]
+    `INSERT INTO stores (name, email, address, latitude, longitude, owner_id) VALUES (?, ?, ?, ?, ?, ?)`,
+    ['Pizza Hut', 'pizza@store.com', '123 Food St', 12.9716, 77.5946, 3]
   );
 
   db.run(
-    `INSERT INTO stores (name, email, address, owner_id) VALUES (?, ?, ?, ?)`,
-    ['Burger King', 'burger@store.com', '456 Fast Food Ave', 3]
+    `INSERT INTO stores (name, email, address, latitude, longitude, owner_id) VALUES (?, ?, ?, ?, ?, ?)`,
+    ['Burger King', 'burger@store.com', '456 Fast Food Ave', 12.9345, 77.6101, 3]
   );
   db.run(
-    `INSERT INTO stores (name, email, address, owner_id) VALUES (?, ?, ?, ?)`,
-    ['Domino\'s Pizza', 'dominos@store.com', '789 Pizza Rd', 3]
+    `INSERT INTO stores (name, email, address, latitude, longitude, owner_id) VALUES (?, ?, ?, ?, ?, ?)`,
+    ['Domino\'s Pizza', 'dominos@store.com', '789 Pizza Rd', 12.9784, 77.6408, 3]
   );
   db.run(`INSERT INTO ratings (user_id, store_id, rating) VALUES (?, ?, ?)`, [2, 1, 5]);
   db.run(`INSERT INTO ratings (user_id, store_id, rating) VALUES (?, ?, ?)`, [2, 2, 4]);

@@ -1,368 +1,424 @@
-import React, { useState, useEffect } from 'react';
-import './AdminDashboard.css';
+import React, { useState, useEffect, useCallback } from 'react';
+import { BarChart, Bar, ResponsiveContainer, Cell, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { io } from 'socket.io-client';
+import GoogleLocationPicker from './GoogleLocationPicker';
+import api from '../api';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Users, Store, Star, Search, Plus, RefreshCw,
+  LogOut, Shield, MapPin, Edit3,
+  ArrowUpRight, X,
+  Key, Moon, Sun
+} from 'lucide-react';
 
-function AdminDashboard({ onLogout }) {
+function AdminDashboard({ onLogout, theme = 'light', onToggleTheme }) {
   const [users, setUsers] = useState([]);
   const [stores, setStores] = useState([]);
-  const [stats, setStats] = useState({
-    total_users: 0,
-    total_stores: 0,
-    total_ratings: 0
-  });
+  const [stats, setStats] = useState({ total_users: 0, total_stores: 0, total_ratings: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
   const [userSearch, setUserSearch] = useState('');
-  const [storeSearch, setStoreSearch] = useState('');
+  const [storeSearch] = useState('');
+  const [userSort] = useState('name');
+  const [userOrder] = useState('asc');
+  const [storeSort] = useState('name');
+  const [storeOrder] = useState('asc');
 
-  const [userSort, setUserSort] = useState('name');
-  const [userOrder, setUserOrder] = useState('asc');
+  // Modal States
+  const [showStoreModal, setShowStoreModal] = useState(false);
+  const [editingStore, setEditingStore] = useState(null);
+  const [storeForm, setStoreForm] = useState({ name: '', email: '', address: '', owner_id: '', latitude: 12.9716, longitude: 77.5946 });
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const [storeSort, setStoreSort] = useState('name');
-  const [storeOrder, setStoreOrder] = useState('asc');
-
-  useEffect(() => {
-    fetchData();
-  }, [userSort, userOrder, storeSort, storeOrder, userSearch, storeSearch]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    setError('');
-
     try {
       const [usersRes, storesRes, statsRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/users?sortBy=${userSort}&order=${userOrder}&search=${userSearch}`),
-        fetch(`http://localhost:5000/api/stores?sortBy=${storeSort}&order=${storeOrder}&search=${storeSearch}`),
-        fetch('http://localhost:5000/api/stats')
+        api.get(`/users?sortBy=${userSort}&order=${userOrder}&search=${userSearch}`),
+        api.get(`/stores?sortBy=${storeSort}&order=${storeOrder}&search=${storeSearch}`),
+        api.get('/stats')
       ]);
-
-      if (!usersRes.ok) throw new Error('Failed to fetch users');
-      if (!storesRes.ok) throw new Error('Failed to fetch stores');
-      if (!statsRes.ok) throw new Error('Failed to fetch stats');
-
-      setUsers(await usersRes.json());
-      setStores(await storesRes.json());
-      setStats(await statsRes.json());
-
+      setUsers(usersRes.data);
+      setStores(storesRes.data);
+      setStats(statsRes.data);
     } catch (err) {
-      console.error('❌ Error fetching data:', err);
-      setError('Failed to load data. Backend might be down.');
+      setError('Connection failed');
     } finally {
       setLoading(false);
     }
-  };
+  }, [userSort, userOrder, userSearch, storeSort, storeOrder, storeSearch]);
+
+  useEffect(() => {
+    fetchData();
+    const socket = io('http://localhost:5000');
+    socket.on('new_rating', () => fetchData());
+    return () => socket.disconnect();
+  }, [fetchData]);
 
   const handleAddUser = async () => {
-    const name = prompt('Enter user name (5-60 chars):');
+    const name = prompt('Name (5-60 chars):');
     if (!name) return;
-
-    if (name.length < 5 || name.length > 60) {
-      alert('Name must be 5-60 characters');
-      return;
-    }
-
-    const email = prompt('Enter email:');
+    const email = prompt('Email:');
     if (!email) return;
-
-    const address = prompt('Enter address:');
+    const address = prompt('Address:');
     if (!address) return;
-
-    const role = prompt('Enter role (admin/user/store_owner):');
+    const role = prompt('Role (admin/user/store_owner):');
     if (!role) return;
-
-    const password = prompt('Enter password (8-16 chars, uppercase + special):');
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,16}$/;
-
-    if (!password || !passwordRegex.test(password)) {
-      alert('Password must be 8-16 chars, 1 uppercase, 1 special character');
-      return;
-    }
+    const password = prompt('Password (8-16 chars, Uppercase + Special):');
+    if (!password) return;
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          email,
-          password,
-          address,
-          role
-        })
-      });
-
-      if (response.ok) {
-        alert('✅ User added successfully!');
-        fetchData(); 
-      } else {
-        const errorData = await response.json();
-        alert(`❌ Error: ${errorData.error}`);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to add user");
+      await api.post('/admin/users', { name, email, password, address, role });
+      alert('✅ User added!');
+      fetchData();
+    } catch (err) {
+      alert(`❌ Error: ${err.response?.data?.error || "Failed"}`);
     }
   };
 
-  const handleAddStore = async () => {
-    const name = prompt('Enter store name:');
-    if (!name) return;
-    const email = prompt('Enter store email:');
-    if (!email) return;
-    const address = prompt('Enter store address:');
-    if (!address) return;
-    const ownerId = prompt('Enter owner ID (from users table):');
-    if (!ownerId) return;
-
+  const handleGeocode = async () => {
+    if (!storeForm.address) return;
+    setIsGeocoding(true);
     try {
-      const response = await fetch('http://localhost:5000/api/stores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name,
-          address,
-          email,
-          owner_id: parseInt(ownerId)
-        })
-      });
-
-      if (response.ok) {
-        alert('✅ Store added successfully!');
-        fetchData(); 
-      } else {
-        const errorData = await response.json();
-        alert(`❌ Error: ${errorData.error}`);
+      // 1. Try Google Maps Geocoding first (High Accuracy)
+      const googleKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
+      if (googleKey) {
+        const googleRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(storeForm.address)}&key=${googleKey}`);
+        const googleData = await googleRes.json();
+        if (googleData.status === 'OK' && googleData.results[0]) {
+          const { lat, lng } = googleData.results[0].geometry.location;
+          setStoreForm(prev => ({ ...prev, latitude: lat, longitude: lng }));
+          return; // Success!
+        }
       }
-    } catch (error) {
-      console.error(error);
-      alert("Failed to add store");
+
+      // 2. Fallback to OpenStreetMap (Nominatim)
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(storeForm.address)}&limit=1`);
+      const data = await res.json();
+      if (data?.[0]) {
+        setStoreForm(prev => ({ ...prev, latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) }));
+        alert('📍 Point Found (via OpenStreetMap)!');
+      } else {
+        alert('Location not found. Try a more specific address.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Geocoding failed');
+    } finally {
+      setIsGeocoding(false);
     }
   };
 
-  const handleDeleteUser = async (userId, userName) => {
-    if (window.confirm(`Are you sure you want to delete user "${userName}"?`)) {
-      alert("Delete functionality not fully implemented in backend yet.");
+  const handleReverseGeocode = async (lat, lng) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      setStoreForm(prev => ({ ...prev, address: data.display_name || prev.address, latitude: lat, longitude: lng }));
+    } catch (err) {
+      setStoreForm(prev => ({ ...prev, latitude: lat, longitude: lng }));
     }
+  };
+
+  const handleSaveStore = async (e) => {
+    e.preventDefault();
+    try {
+      const isEdit = !!editingStore;
+      const endpoint = isEdit ? `/stores/${editingStore.id}` : '/stores';
+      await (isEdit ? api.put(endpoint, storeForm) : api.post(endpoint, storeForm));
+      setShowStoreModal(false);
+      fetchData();
+    } catch (err) {
+      alert(`Error saving store`);
+    }
+  };
+
+  const openAddStoreModal = () => {
+    setEditingStore(null);
+    setStoreForm({ name: '', email: '', address: '', owner_id: '', latitude: 12.9716, longitude: 77.5946 });
+    setShowStoreModal(true);
+  };
+
+  const openEditStoreModal = (store) => {
+    setEditingStore(store);
+    setStoreForm({ name: store.name, email: store.email, address: store.address, owner_id: store.owner_id, latitude: store.latitude || 12.9716, longitude: store.longitude || 77.5946 });
+    setShowStoreModal(true);
   };
 
   const handleUpdatePassword = async () => {
-    const currentPassword = prompt('Enter current password:');
+    const currentPassword = prompt('Current Password:');
     if (!currentPassword) return;
-
-    const newPassword = prompt('Enter new password (8-16 chars, uppercase + special):');
+    const newPassword = prompt('New Password:');
     if (!newPassword) return;
-
-    const confirmPassword = prompt('Confirm new password:');
-    if (newPassword !== confirmPassword) {
-      alert('❌ Passwords do not match!');
-      return;
-    }
-
     const user = JSON.parse(localStorage.getItem('user'));
-
-    if (user) {
-      try {
-        const response = await fetch("http://localhost:5000/api/auth/update-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user.id,
-            currentPassword,
-            newPassword
-          })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          alert('✅ Password updated successfully!');
-        } else {
-          alert(`❌ Error: ${data.error}`);
-        }
-      } catch (error) {
-        alert('Failed to update password');
-      }
+    try {
+      await api.post("/auth/update-password", { userId: user.id, currentPassword, newPassword });
+      alert('✅ Updated!');
+    } catch (err) {
+      alert(`Error: ${err.response?.data?.error}`);
     }
   };
 
-  if (loading && users.length === 0) {
-    return (
-      <div className="admin-dashboard">
-        <div className="dashboard-header">
-          <h1>🔧 Admin Dashboard</h1>
-        </div>
-        <div className="loading-container">
-          <h2>📊 Loading data...</h2>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="admin-dashboard">
-      <div className="dashboard-header">
-        <h1>🔧 Admin Dashboard</h1>
-        <div className="header-actions">
-          <button className="update-password-btn" onClick={handleUpdatePassword}>
-            Update Password
+    <div className="flex min-h-screen bg-[#f8f9fc] dark:bg-slate-950 transition-colors duration-300">
+      {/* Sidebar */}
+      <aside className="w-72 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 p-8 hidden lg:flex flex-col sticky top-0 h-screen transition-colors duration-300">
+        <div className="flex items-center gap-3 mb-12">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-premium">
+            <Shield className="text-white w-6 h-6" />
+          </div>
+          <span className="text-xl font-bold tracking-tight text-slate-800">AdminCenter</span>
+        </div>
+
+        <nav className="space-y-2 flex-1">
+          <button className="flex items-center gap-3 w-full p-4 bg-primary/5 text-primary font-bold rounded-2xl">
+            <ArrowUpRight className="w-5 h-5" /> Overview
           </button>
-          <button className="logout-btn" onClick={onLogout}>Logout</button>
-        </div>
-      </div>
+          <button onClick={handleUpdatePassword} className="flex items-center gap-3 w-full p-4 text-slate-500 hover:bg-slate-50 rounded-2xl">
+            <Key className="w-5 h-5" /> Change Password
+          </button>
+        </nav>
 
-      {error && (
-        <div className="error-alert">
-          ⚠️ {error} <button onClick={fetchData}>Retry</button>
+        <div className="mt-auto space-y-4">
+          {onToggleTheme && (
+            <button
+              onClick={onToggleTheme}
+              className="flex items-center gap-3 w-full p-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-100 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <span className="font-semibold">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+          )}
+          <button onClick={onLogout} className="flex items-center gap-3 w-full p-4 bg-red-50 text-red-600 font-bold rounded-2xl hover:bg-red-100 transition-all">
+            <LogOut className="w-5 h-5" /> Logout
+          </button>
         </div>
-      )}
+      </aside>
 
-      <div className="stats-container">
-        <div className="stat-card">
-          <h3>Total Users</h3>
-          <p className="stat-number">{stats.total_users}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Total Stores</h3>
-          <p className="stat-number">{stats.total_stores}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Total Ratings</h3>
-          <p className="stat-number">{stats.total_ratings}</p>
-        </div>
-      </div>
-
-      <div className="action-buttons">
-        <button className="btn-primary" onClick={handleAddUser}>
-          Add New User
-        </button>
-        <button className="btn-secondary" onClick={handleAddStore}>
-          Add New Store
-        </button>
-        <button className="btn-secondary" onClick={fetchData}>
-          Refresh Data
-        </button>
-      </div>
-
-      {/* Users Table */}
-      <div className="table-section">
-        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <h3>Users List ({users.length})</h3>
-            <input
-              type="text"
-              placeholder="🔍 Filter users..."
-              value={userSearch}
-              onChange={(e) => setUserSearch(e.target.value)}
-              style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
+      <main className="flex-1 p-4 lg:p-12 max-w-7xl mx-auto space-y-12">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">Platform Overview</h1>
+            <p className="text-slate-500 font-medium">Real-time system health and management</p>
           </div>
-          <div className="sort-controls">
-            Sort:
-            <select value={userSort} onChange={e => setUserSort(e.target.value)}>
-              <option value="name">Name</option>
-              <option value="email">Email</option>
-              <option value="role">Role</option>
-            </select>
-            <select value={userOrder} onChange={e => setUserOrder(e.target.value)}>
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
+          <div className="flex gap-3">
+            <button onClick={fetchData} className="p-4 bg-white border border-slate-200 rounded-2xl text-slate-600 hover:bg-slate-50 transition-all">
+              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+            <button onClick={handleAddUser} className="bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-2xl font-bold shadow-premium flex items-center gap-2">
+              <Plus className="w-5 h-5" /> Create User
+            </button>
+          </div>
+        </header>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { label: 'Total Users', val: stats.total_users, icon: Users, color: 'bg-indigo-50 text-indigo-600' },
+            { label: 'Registered Stores', val: stats.total_stores, icon: Store, color: 'bg-emerald-50 text-emerald-600' },
+            { label: 'Global Ratings', val: stats.total_ratings, icon: Star, color: 'bg-amber-50 text-amber-600' }
+          ].map((s, i) => (
+            <motion.div key={i} whileHover={{ y: -5 }} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-6">
+              <div className={`w-14 h-14 ${s.color} rounded-2xl flex items-center justify-center`}>
+                <s.icon className="w-7 h-7" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{s.label}</p>
+                <p className="text-3xl font-black text-slate-900">{s.val}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Analytics Section */}
+        <div className="bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+          <h3 className="text-xl font-bold text-slate-800 mb-10 flex items-center gap-2">
+            <Star className="w-5 h-5 text-amber-400 fill-amber-400" /> Leaderboard: Rating Performance
+          </h3>
+          <div className="h-80 w-full">
+            <ResponsiveContainer>
+              <BarChart data={stores.slice(0, 5).map(s => ({ name: s.name, rating: s.average_rating || 0 }))}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 600 }} />
+                <YAxis domain={[0, 5]} axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                <Bar dataKey="rating" radius={[10, 10, 0, 0]} barSize={50}>
+                  {stores.slice(0, 5).map((e, idx) => <Cell key={idx} fill={idx === 0 ? '#6c5ce7' : '#9f98ff'} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
-        <div className="table-container">
-          <table className="users-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Address</th>
-                <th>Store Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => {
-                const ownedStore = stores.find(s => s.owner_id === user.id);
-                return (
-                  <tr key={user.id}>
-                    <td>{user.id}</td>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>
-                      <span className={`role-badge role-${user.role}`}>
-                        {user.role}
+
+        {/* User Management */}
+        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+          <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+            <h3 className="font-bold text-slate-800 text-lg">User Directory</h3>
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-primary transition-colors" />
+              <input
+                type="text" placeholder="Search accounts..."
+                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                value={userSearch} onChange={e => setUserSearch(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-slate-50/50 text-slate-400 text-xs font-black uppercase tracking-widest">
+                  <th className="px-8 py-5">Full Name</th>
+                  <th className="px-8 py-5">Role</th>
+                  <th className="px-8 py-5">Location</th>
+                  <th className="px-8 py-5">Score</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {users.map(u => (
+                  <tr key={u.id} className="hover:bg-slate-50/30 transition-colors">
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
+                          {u.name.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-800">{u.name}</p>
+                          <p className="text-xs text-slate-400">{u.email}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${u.role === 'admin' ? 'bg-red-50 text-red-600' :
+                        u.role === 'store_owner' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                        {u.role}
                       </span>
                     </td>
-                    <td>{user.address}</td>
-                    <td>
-                      {user.role === 'store_owner' && ownedStore
-                        ? `⭐ ${ownedStore.average_rating || 0}/5`
-                        : '-'}
+                    <td className="px-8 py-6 text-sm text-slate-500 font-medium truncate max-w-[200px]">{u.address}</td>
+                    <td className="px-8 py-6 font-bold text-slate-800">
+                      {u.role === 'store_owner' ? (
+                        <div className="flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                          {stores.find(s => s.owner_id === u.id)?.average_rating || 0}
+                        </div>
+                      ) : '-'}
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Stores Table */}
-      <div className="table-section">
-        <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <h3>Stores List ({stores.length})</h3>
-            <input
-              type="text"
-              placeholder="🔍 Filter stores..."
-              value={storeSearch}
-              onChange={(e) => setStoreSearch(e.target.value)}
-              style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
-            />
-          </div>
-          <div className="sort-controls">
-            Sort:
-            <select value={storeSort} onChange={e => setStoreSort(e.target.value)}>
-              <option value="name">Name</option>
-              <option value="rating">Rating</option>
-            </select>
-            <select value={storeOrder} onChange={e => setStoreOrder(e.target.value)}>
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
-        <div className="table-container">
-          <table className="stores-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Address</th>
-                <th>Avg Rating</th>
-                <th>Total Ratings</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stores.map(store => (
-                <tr key={store.id}>
-                  <td>{store.id}</td>
-                  <td>{store.name}</td>
-                  <td>{store.email}</td>
-                  <td>{store.address}</td>
-                  <td>{store.average_rating || 0}</td>
-                  <td>{store.total_ratings || 0}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      <div className="dashboard-footer">
-        <p>Using Backend API at Port 5000</p>
-      </div>
+        {/* Store Management Table */}
+        <div className="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl">
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h3 className="text-2xl font-bold flex items-center gap-3">
+                <Store className="w-7 h-7 text-emerald-400" /> Managed Assets
+              </h3>
+              <p className="text-slate-400 text-sm mt-1">Configure and monitor global store locations</p>
+            </div>
+            <button onClick={openAddStoreModal} className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-2xl font-bold transition-all flex items-center gap-2">
+              <Plus className="w-5 h-5" /> New Registry
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {stores.map(s => (
+              <div key={s.id} className="bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col hover:border-emerald-500/50 transition-all group">
+                <div className="flex justify-between items-start mb-4">
+                  <h4 className="font-bold text-lg text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{s.name}</h4>
+                  <button onClick={() => openEditStoreModal(s)} className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-slate-400">
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-2 text-slate-400 text-sm mb-6">
+                  <MapPin className="w-4 h-4" /> <span className="truncate">{s.address}</span>
+                </div>
+                <div className="mt-auto flex items-center justify-between pt-6 border-t border-white/5">
+                  <div className="flex items-center gap-6">
+                    <div>
+                      <p className="text-[10px] uppercase font-black text-slate-500 mb-1">Impact</p>
+                      <div className="flex items-center gap-1.5 font-bold text-emerald-400">
+                        <Star className="w-4 h-4 fill-emerald-500" /> {s.average_rating || 0}
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-black text-slate-500 mb-1">Volume</p>
+                      <p className="font-bold text-slate-300">{s.total_ratings || 0} Reviews</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] uppercase font-black text-slate-500 mb-1 tracking-widest">Global Pointer</p>
+                    <p className="text-xs font-mono text-emerald-500/70">{s.latitude?.toFixed(2)}, {s.longitude?.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+
+      {/* Store Modal */}
+      <AnimatePresence>
+        {showStoreModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowStoreModal(false)} className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-5xl rounded-[2.5rem] shadow-2xl relative z-10 overflow-hidden">
+              <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h2 className="text-2xl font-bold flex items-center gap-2 tracking-tight">
+                  {editingStore ? <Edit3 className="w-6 h-6 text-primary" /> : <Plus className="w-6 h-6 text-emerald-500" />}
+                  {editingStore ? 'Update Registry' : 'New Store Entry'}
+                </h2>
+                <button onClick={() => setShowStoreModal(false)} className="p-2 hover:bg-white rounded-xl shadow-sm transition-all"><X className="w-6 h-6 text-slate-400" /></button>
+              </div>
+
+              <form onSubmit={handleSaveStore} className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Store Identity</label>
+                    <input type="text" required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20" value={storeForm.name} onChange={e => setStoreForm({ ...storeForm, name: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Support Email</label>
+                    <input type="email" required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20" value={storeForm.email} onChange={e => setStoreForm({ ...storeForm, email: e.target.value })} />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Physical Address</label>
+                  <div className="flex gap-2">
+                    <input type="text" required className="flex-1 p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20" value={storeForm.address} onChange={e => setStoreForm({ ...storeForm, address: e.target.value })} placeholder="Type street and city..." />
+                    <button type="button" onClick={handleGeocode} disabled={isGeocoding} className="px-6 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2">
+                      <MapPin className={`w-4 h-4 ${isGeocoding ? 'animate-bounce' : ''}`} /> Resolve
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest ml-1">Point Authorization (Owner ID)</label>
+                  <input type="number" required className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-primary/20" value={storeForm.owner_id} onChange={e => setStoreForm({ ...storeForm, owner_id: e.target.value })} />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center px-1">
+                    <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Spatial Mapping</label>
+                    <p className="text-xs text-slate-400">Click on map or drag pin to refine location</p>
+                  </div>
+                  <div className="rounded-3xl overflow-hidden border border-slate-100 shadow-inner h-[500px] relative">
+                    <GoogleLocationPicker initialPos={[storeForm.latitude, storeForm.longitude]} onLocationSelect={handleReverseGeocode} />
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-4 sticky bottom-0 bg-white">
+                  <button type="button" onClick={() => setShowStoreModal(false)} className="flex-1 py-4 font-bold text-slate-500 hover:bg-slate-50 rounded-2xl transition-all">Dismiss</button>
+                  <button type="submit" className="flex-[2] py-4 bg-primary text-white font-bold rounded-2xl shadow-premium hover:bg-primary-dark transition-all">Confirm Store Data</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
