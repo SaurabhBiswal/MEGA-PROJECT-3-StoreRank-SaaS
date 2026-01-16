@@ -1,12 +1,15 @@
 const redis = require('redis');
 require('dotenv').config();
 
+const url = process.env.REDIS_URL;
+const isTLS = url?.startsWith('rediss://');
+
 const client = redis.createClient({
-    url: process.env.REDIS_URL,
-    socket: {
-        tls: true, // Aiven Redis requires TLS
+    url: url,
+    socket: isTLS ? {
+        tls: true,
         rejectUnauthorized: false
-    }
+    } : undefined
 });
 
 client.on('error', (err) => console.log('❌ Redis Client Error', err));
