@@ -28,7 +28,7 @@ jobs:
     - name: Install Backend Dependencies
       run: |
         cd backend
-        npm ci
+        npm install --legacy-peer-deps
 
     # Frontend Setup
     - name: Use Node.js ${{ matrix.node-version }} for Frontend
@@ -41,7 +41,7 @@ jobs:
     - name: Install Frontend Dependencies
       run: |
         cd frontend
-        npm ci
+        npm install --legacy-peer-deps
 
     - name: Build Frontend
       run: |
