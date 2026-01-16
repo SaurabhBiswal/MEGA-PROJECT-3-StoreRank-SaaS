@@ -4,6 +4,11 @@
 
 A production-ready, full-stack store rating platform with real-time updates, Google Maps integration, and enterprise-grade architecture.
 
+## 🌐 Live Demo
+
+- **Frontend (Netlify)**: [https://chimerical-torrone-c2dab3.netlify.app](https://chimerical-torrone-c2dab3.netlify.app)
+- **Backend API (Render)**: [https://storerank-backend.onrender.com](https://storerank-backend.onrender.com)
+
 ---
 
 ## 📝 Engineering Journey: Building StoreRank SaaS
