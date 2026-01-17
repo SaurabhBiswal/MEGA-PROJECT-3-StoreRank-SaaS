@@ -177,7 +177,7 @@ This project went from **"I can follow a tutorial"** to **"I can solve real prob
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React.js, Tailwind CSS, Framer Motion, Google Maps API
+- **Frontend**: React.js, Tailwind CSS, Framer Motion, Google Maps API,Chart.js
 - **Backend**: Node.js, Express.js, Socket.IO
 - **Database**: PostgreSQL (Aiven) + Redis (Upstash)
 - **Authentication**: JWT + Refresh Tokens
