@@ -81,7 +81,7 @@ const UserDashboard = ({ onLogout, theme = 'light', onToggleTheme }) => {
     }
     fetchStores();
     if (user?.id) fetchUserRatings();
-  }, [fetchStores, fetchUserRatings]);
+  }, [fetchStores, fetchUserRatings, user?.id]);
 
   const handleRateStore = async (storeId) => {
     if (!user) return;

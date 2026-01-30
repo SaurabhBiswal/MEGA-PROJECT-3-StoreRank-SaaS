@@ -5,9 +5,9 @@ import LocationPicker from './LocationPicker';
 import api from '../api';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Store, Star, TrendingUp, Users, Download,
+  Store, Star, TrendingUp, Download,
   Mail, Heart, Settings, LogOut, Key,
-  MapPin, X,
+  X,
   Navigation, Moon, Sun, FileText
 } from 'lucide-react';
 
