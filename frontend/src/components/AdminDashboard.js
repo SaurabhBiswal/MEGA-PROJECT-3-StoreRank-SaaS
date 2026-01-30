@@ -16,7 +16,6 @@ function AdminDashboard({ onLogout, theme = 'light', onToggleTheme }) {
   const [stores, setStores] = useState([]);
   const [stats, setStats] = useState({ total_users: 0, total_stores: 0, total_ratings: 0 });
   const [loading, setLoading] = useState(true);
-  const [, setError] = useState('');
   const [userSearch, setUserSearch] = useState('');
   const [storeSearch] = useState('');
   const [userSort] = useState('name');
