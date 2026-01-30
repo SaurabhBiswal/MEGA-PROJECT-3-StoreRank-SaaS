@@ -43,21 +43,42 @@ Automate your testing and deployment. A workflow file is located at `.github/wor
 
 ## ☁️ Cloud Deployment Guide
 
-### A. Frontend (Vercel) - Recommended ⚡
-1. Install Vercel CLI: `npm i -g vercel`
-2. Navigate to frontend: `cd frontend`
-3. Deploy: `vercel`
-4. Follow the prompts. Set `Output Directory` to `build`.
-5. **Environment Variables**: Go to Vercel Dashboard > Settings > Environment Variables and add `REACT_APP_API_URL` pointing to your deployed backend URL.
+## ☁️ Cloud Deployment Guide (Step-by-Step)
 
-### B. Backend (Render/Railway) 🚂
-1. Create a new "Web Service" on [Render.com](https://render.com/).
-2. Connect your GitHub repository.
-3. Settings:
-   - **Root Directory**: `backend`
-   - **Build Command**: `npm install`
+### A. Backend (Render.com) 🚂
+**Backend ko pehle deploy karo kyunki Frontend ko iska URL chahiye hoga.**
+
+1. **Dashboard**: [Render Dashboard](https://dashboard.render.com/) pe jao aur **"New Web Service"** click karo.
+2. **Connect Repo**: `MEGA-PROJECT-3-StoreRank-SaaS` select karo.
+3. **Settings**:
+   - **Name**: `storerank-backend`
+   - **Root Directory**: `backend` (🚨 Bahut Zaroori!)
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install --legacy-peer-deps`
    - **Start Command**: `node server.js`
-4. **Environment Variables**: Add your database URL (Aiven), Redis URL (Upstash), and JWT_SECRET.
+4. **Environment Variables** (Section niche scroll karke):
+   - `DATABASE_URL`: `postgresql://...` (Aiven se mila hua)
+   - `REDIS_URL`: `redis://...` (Upstash se mila hua)
+   - `JWT_SECRET`: Koi bhi strong password
+   - `NODE_ENV`: `production`
+5. **Create Web Service** click karo. Wait karo jab tak "Live" na likha aa jaye.
+6. **Copy URL**: Top-left se Backend ka URL copy karo (e.g., `https://storerank-backend.onrender.com`).
+
+### B. Frontend (Netlify) ⚡
+1. **Dashboard**: [Netlify Dashboard](https://app.netlify.com/) pe jao aur **"Add new site" > "Import from Git"**.
+2. **Connect Repo**: GitHub select karo aur `MEGA-PROJECT-3-StoreRank-SaaS` choose karo.
+3. **Build Settings**:
+   - **Base directory**: `frontend`
+   - **Build command**: `CI=false npm run build` (CI=false warning errors ignore karne ke liye)
+   - **Publish directory**: `frontend/build`
+4. **Environment Variables** ("Add environment variable" pe click karo):
+   - Key: `REACT_APP_API_URL`
+   - Value: Jo Render ka backend URL copy kiya tha (e.g., `https://storerank-backend.onrender.com`)
+   - Key: `REACT_APP_GOOGLE_MAPS_API_KEY`
+   - Value: Tera Google Maps Key
+5. **Deploy Site** click karo.
+
+🎉 **Bas ho gaya!** 2-3 minute mein teri site live hogi.
 
 ---
 
