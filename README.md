@@ -7,6 +7,7 @@ A production-ready, full-stack store rating platform with real-time updates, Goo
 ## 🌐 Live Demo
 
 - **Frontend (Netlify)**: [https://chimerical-torrone-c2dab3.netlify.app](https://chimerical-torrone-c2dab3.netlify.app)
+- **Frontend (Vercel)**: [https://mega-project-3-store-rank-saa-s-d97.vercel.app](https://mega-project-3-store-rank-saa-s-d97.vercel.app)
 - **Backend API (Render)**: [https://storerank-backend.onrender.com](https://storerank-backend.onrender.com)
 
 ---
