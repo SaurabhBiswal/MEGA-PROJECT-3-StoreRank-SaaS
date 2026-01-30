@@ -86,6 +86,52 @@ io.on('connection', (socket) => {
 
 // --- ROUTES ---
 
+// ROOT ROUTE (for quick verification)
+app.get('/', (req, res) => {
+  res.json({
+    status: 'running',
+    message: 'StoreRank Backend API is live! 🚀',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/register, /api/login, /api/logout',
+      stores: '/api/stores',
+      ratings: '/api/ratings',
+      graphql: '/api/graphql',
+      health: '/api/health'
+    }
+  });
+});
+
+// HEALTH CHECK
+app.get('/api/health', async (req, res) => {
+  try {
+    // Check database connection
+    await pool.query('SELECT 1');
+    
+    // Check Redis connection
+    let redisStatus = 'disconnected';
+    try {
+      await redisClient.ping();
+      redisStatus = 'connected';
+    } catch (redisErr) {
+      redisStatus = 'error: ' + redisErr.message;
+    }
+
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      database: 'connected',
+      redis: redisStatus,
+      uptime: process.uptime()
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      error: error.message
+    });
+  }
+});
+
 // REGISTER
 app.post('/api/register', async (req, res) => {
   try {
