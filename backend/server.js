@@ -464,11 +464,11 @@ app.post('/api/stores', authenticateToken, async (req, res) => {
 app.put('/api/stores/:id', authenticateToken, async (req, res) => {
   try {
     const storeId = req.params.id;
-    const { name, address, email } = req.body;
+    const { name, address, email, owner_id } = req.body;
     const latitude = parseFloat(req.body.latitude);
     const longitude = parseFloat(req.body.longitude);
 
-    console.log(`🚀 Updating Store ${storeId}: ${name}, Lat: ${latitude}, Lng: ${longitude}`);
+    console.log(`🚀 Updating Store ${storeId}: ${name}, Lat: ${latitude}, Lng: ${longitude}, Owner: ${owner_id}`);
 
     if (!name || !address || !email) {
       return res.status(400).json({ error: 'Name, address, and email are required' });
@@ -476,11 +476,11 @@ app.put('/api/stores/:id', authenticateToken, async (req, res) => {
 
     const query = `
       UPDATE stores 
-      SET name = $1, address = $2, email = $3, latitude = $4, longitude = $5 
-      WHERE id = $6
+      SET name = $1, address = $2, email = $3, latitude = $4, longitude = $5, owner_id = $6
+      WHERE id = $7
     `;
 
-    const values = [name, address, email, isNaN(latitude) ? null : latitude, isNaN(longitude) ? null : longitude, storeId];
+    const values = [name, address, email, isNaN(latitude) ? null : latitude, isNaN(longitude) ? null : longitude, owner_id, storeId];
 
     const dbRes = await pool.query(query, values);
 
