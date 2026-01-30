@@ -97,9 +97,38 @@ app.get('/', (req, res) => {
       stores: '/api/stores',
       ratings: '/api/ratings',
       graphql: '/api/graphql',
-      health: '/api/health'
+      health: '/api/health',
+      adminSetup: '/api/admin-setup'
     }
   });
+});
+
+// TEMPORARY: Admin Setup Route (Run once to create Admin)
+app.get('/api/admin-setup', async (req, res) => {
+  try {
+    const email = 'admin@test.com';
+    const password = 'Admin@123';
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Check if user exists
+    const userCheck = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+    if (userCheck.rows.length > 0) {
+      // Update existing user to admin
+      await pool.query('UPDATE users SET role = $1 WHERE email = $2', ['admin', email]);
+      return res.json({ message: `User ${email} promoted to ADMIN successfully!` });
+    } else {
+      // Create new admin user
+      await pool.query(
+        'INSERT INTO users (name, email, password, address, role) VALUES ($1, $2, $3, $4, $5)',
+        ['Super Admin', email, hashedPassword, 'Headquarters', 'admin']
+      );
+      return res.json({ message: `Admin user ${email} created successfully!` });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to setup admin', details: err.message });
+  }
 });
 
 // HEALTH CHECK
@@ -107,7 +136,7 @@ app.get('/api/health', async (req, res) => {
   try {
     // Check database connection
     await pool.query('SELECT 1');
-    
+
     // Check Redis connection
     let redisStatus = 'disconnected';
     try {
